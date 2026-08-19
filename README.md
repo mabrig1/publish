@@ -5,6 +5,8 @@ Mabrig PublishAI is an academic journal discovery, verification and submission-a
 ## Core capabilities
 
 - **Global journal finder** — live journal discovery from OpenAlex with access, fee-data and citation-signal filters.
+- **100-candidate evidence-aware directory** — `/free-journals` converts a curated cross-disciplinary list into a safer research tool with zero-fee, APC, conditional, repository/preprint, archived and recheck-required labels.
+- **Live checks from curated cards** — every curated entry can call Journal Guard so users can compare the static candidate note with current registry evidence.
 - **Journal Guard** — checks OpenAlex scholarly-source records, Crossref DOI/ISSN metadata and DOAJ inclusion indicators returned by OpenAlex.
 - **Predatory-risk support** — reports evidence strength and caution flags rather than making unsupported blacklist-style accusations.
 - **Open-access discovery** — identifies OA/DOAJ signals and separates known APC data from unknown fee data.
@@ -12,6 +14,21 @@ Mabrig PublishAI is an academic journal discovery, verification and submission-a
 - **Evidence-based journal matching** — searches related OpenAlex works and recommends journals that are actually publishing similar scholarship.
 - **AI publishing coach** — optional OpenAI Responses API integration for manuscript-readiness advice, journal-fit reasoning and submission checklists.
 - **Responsive interface** — designed for desktop and mobile academic users.
+
+## Why the curated directory uses evidence labels
+
+A historic list of “free journals” becomes unsafe when fee policies change. The curated directory therefore treats the 100 submitted names as **candidates, not permanent fee guarantees**.
+
+Examples already corrected in the interface include:
+
+- JMLR and JOSS: current official author information documents zero publication fees.
+- ACS Central Science: current ACS guidance describes it as diamond open access with no article publishing charges.
+- JAMA Network Open: research articles currently require an APC, with waivers/discounts available for eligible authors.
+- Chemical Science: RSC states that APCs apply to submissions made on or after 1 July 2026, subject to agreements/waivers.
+- OSF Preprints: the generalist server stopped accepting new submissions in 2025 while community-run OSF preprint servers remain active.
+- PeerJ Preprints: treated as an archived legacy preprint service rather than a current journal.
+
+All other curated candidates whose current fee policy has not been independently established inside the app are labelled **Recheck current policy** rather than “free.”
 
 ## Data sources
 
