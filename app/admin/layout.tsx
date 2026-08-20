@@ -35,6 +35,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
         <a href="/admin" style={linkStyle}>Dashboard</a>
         <a href="/admin/submission-readiness" style={{ ...linkStyle, background: "#f5c963", color: "#2c2818" }}>Submission Gate</a>
         <a href="/admin/citation-auditor" style={{ ...linkStyle, background: "#9dd2ff", color: "#163a55" }}>Citation Auditor</a>
+        <a href="/admin/visibility-pack" style={{ ...linkStyle, background: "#cab8ff", color: "#31245e" }}>Visibility Pack</a>
         <a href="/admin/scholar-auditor" style={{ ...linkStyle, background: "#71e0bd", color: "#10251f", fontWeight: 900 }}>Live Scholar Auditor</a>
       </nav>
     </>
