@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { generateWithAiFallback } from "@/lib/ai-provider";
 import { normalizeOpenAlexSource, type Journal } from "@/lib/journals";
 
 export const runtime = "nodejs";
@@ -14,7 +15,7 @@ async function findCandidateJournals(searchText: string): Promise<Journal[]> {
   url.searchParams.set("per-page", "40");
 
   const response = await fetch(url, {
-    headers: { "User-Agent": "MabrigPublishAI/0.1 (journal matching app)" },
+    headers: { "User-Agent": "MabrigPublishAI/0.3 (journal matching app)" },
     next: { revalidate: 3600 },
   });
   if (!response.ok) throw new Error(`OpenAlex matching failed (${response.status})`);
@@ -42,9 +43,6 @@ async function generateAiAdvice(input: {
   field: string;
   candidates: Journal[];
 }) {
-  if (!process.env.OPENAI_API_KEY) return null;
-
-  const model = process.env.OPENAI_MODEL || "gpt-5.6-luna";
   const prompt = `You are an academic journal submission strategist. Help the author improve publication readiness and choose among registry-derived candidate journals. Never invent impact factors, acceptance rates, indexing, APCs, turnaround times, or submission requirements. If a fact is not in the supplied data, say it must be checked on the official journal site. Do not write a paper for the author; provide ethical editorial assistance, targeting advice, and a submission checklist.
 
 MANUSCRIPT
@@ -58,26 +56,7 @@ ${JSON.stringify(input.candidates.slice(0, 8), null, 2)}
 
 Return concise sections: Readiness diagnosis, Best-fit candidates (rank 3-5 with rationale), Manuscript improvements, Submission checklist, and Red flags to verify.`;
 
-  const response = await fetch("https://api.openai.com/v1/responses", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ model, input: prompt }),
-  });
-
-  if (!response.ok) return null;
-  const data = await response.json();
-  if (typeof data.output_text === "string") return data.output_text;
-
-  const texts: string[] = [];
-  for (const item of data.output ?? []) {
-    for (const content of item.content ?? []) {
-      if (content.type === "output_text" && typeof content.text === "string") texts.push(content.text);
-    }
-  }
-  return texts.join("\n").trim() || null;
+  return generateWithAiFallback(prompt);
 }
 
 export async function POST(request: NextRequest) {
@@ -94,12 +73,14 @@ export async function POST(request: NextRequest) {
 
     const searchText = [title, keywords, field, abstract.slice(0, 300)].filter(Boolean).join(" ");
     const candidates = await findCandidateJournals(searchText);
-    const aiAdvice = await generateAiAdvice({ title, abstract, keywords, field, candidates });
+    const ai = await generateAiAdvice({ title, abstract, keywords, field, candidates });
 
     return NextResponse.json({
       candidates,
-      aiAdvice,
-      aiEnabled: Boolean(aiAdvice),
+      aiAdvice: ai?.text ?? null,
+      aiEnabled: Boolean(ai?.text),
+      aiProvider: ai?.provider ?? null,
+      aiModel: ai?.model ?? null,
       readiness: {
         abstractLength: abstract.length,
         hasKeywords: keywords.split(",").filter((k: string) => k.trim()).length >= 3,
