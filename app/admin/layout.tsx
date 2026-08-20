@@ -33,6 +33,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
         }}
       >
         <a href="/admin" style={linkStyle}>Dashboard</a>
+        <a href="/admin/high-impact" style={{ ...linkStyle, background: "#d9b6ff", color: "#3f2358", fontWeight: 900 }}>High-Impact Accelerator</a>
         <a href="/admin/submission-readiness" style={{ ...linkStyle, background: "#f5c963", color: "#2c2818" }}>Submission Gate</a>
         <a href="/admin/journal-matrix" style={{ ...linkStyle, background: "#f0a6dd", color: "#522044" }}>Journal Matrix</a>
         <a href="/admin/citation-auditor" style={{ ...linkStyle, background: "#9dd2ff", color: "#163a55" }}>Citation Auditor</a>
