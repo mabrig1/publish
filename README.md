@@ -62,6 +62,24 @@ ADMIN_ACCESS_KEY=your-long-random-secret
 
 The admin key is validated server-side and stored in an HttpOnly session cookie after successful login. Do not place it in a `NEXT_PUBLIC_` variable.
 
+## Frontend and Express backend deployment
+
+Deploy this repository as two Vercel projects:
+
+- `publish`: root directory `/`, framework Next.js, with `NEXT_PUBLIC_BACKEND_URL=https://publish-kkmm.vercel.app`.
+- `publish-kkmm`: root directory `backend`, framework Express, with the variables below.
+
+The Express service stores client jobs, pipeline status and Google Scholar audit histories in MongoDB so the dashboard works across browsers and devices:
+
+```bash
+MONGODB_URI=mongodb+srv://<user>:<password>@<cluster>/<database>
+MONGODB_DB=publishai
+ADMIN_ACCESS_KEY=<same strong key used by the frontend>
+FRONTEND_URL=https://publish-gilt-one.vercel.app
+```
+
+Create a MongoDB Atlas database user, allow Vercel's serverless connections in Atlas Network Access, and store these variables only in the `publish-kkmm` project. The public backend health endpoint is `/api/health` and never returns credentials.
+
 ## Scholarly API configuration
 
 ```bash

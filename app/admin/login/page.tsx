@@ -2,6 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
+import { backendUrl } from "@/lib/backend-url";
 import styles from "../admin.module.css";
 
 export default function AdminLoginPage() {
@@ -22,6 +23,13 @@ export default function AdminLoginPage() {
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Login failed.");
+      const backendResponse = await fetch(backendUrl("/api/session"), {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ key }),
+      });
+      if (!backendResponse.ok) throw new Error("Frontend login succeeded, but the Express backend session could not be started.");
       router.replace("/admin");
       router.refresh();
     } catch (err) {

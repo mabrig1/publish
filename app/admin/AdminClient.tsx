@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
+import { backendUrl } from "@/lib/backend-url";
 import styles from "./admin.module.css";
 
 type Candidate = {
@@ -126,12 +127,27 @@ export default function AdminClient() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem("publishai_admin_jobs");
-      if (saved) setJobs(JSON.parse(saved));
-    } catch {
-      // Ignore malformed browser storage.
+    let cancelled = false;
+    async function loadJobs() {
+      try {
+        const response = await fetch(backendUrl("/api/jobs"), { cache: "no-store", credentials: "include" });
+        if (!response.ok) throw new Error("Backend unavailable");
+        const data = await response.json();
+        if (!cancelled) {
+          setJobs(data.jobs || []);
+          localStorage.setItem("publishai_admin_jobs", JSON.stringify(data.jobs || []));
+        }
+      } catch {
+        try {
+          const saved = localStorage.getItem("publishai_admin_jobs");
+          if (saved && !cancelled) setJobs(JSON.parse(saved));
+        } catch {
+          // Ignore malformed legacy browser storage.
+        }
+      }
     }
+    loadJobs();
+    return () => { cancelled = true; };
   }, []);
 
   function persist(nextJobs: Job[]) {
@@ -180,6 +196,16 @@ export default function AdminClient() {
         scholarAudits: [],
       };
       persist([job, ...jobs]);
+      const saveResponse = await fetch(backendUrl("/api/jobs"), {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(job),
+      });
+      if (!saveResponse.ok) {
+        const saveData = await saveResponse.json().catch(() => ({}));
+        throw new Error(saveData.error || "Report generated, but the client job could not be saved.");
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Publishing engine failed.");
     } finally {
@@ -204,15 +230,22 @@ export default function AdminClient() {
     if (result) await navigator.clipboard.writeText(result.report);
   }
 
-  function updateStatus(id: string, status: JobStatus) {
+  async function updateStatus(id: string, status: JobStatus) {
     persist(jobs.map((job) => job.id === id ? { ...job, status } : job));
+    const response = await fetch(backendUrl(`/api/jobs/${encodeURIComponent(id)}`), {
+      method: "PATCH",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status }),
+    });
+    if (!response.ok) setError("Status changed locally, but the backend update failed. Please retry.");
   }
 
   function openAudit(job: Job) {
     window.location.href = `/admin/scholar-auditor?job=${encodeURIComponent(job.id)}`;
   }
 
-  function openCurrentFormAudit() {
+  async function openCurrentFormAudit() {
     const provisionalJob: Job = {
       id: crypto.randomUUID(),
       clientName: form.clientName || "Unnamed client",
@@ -227,10 +260,21 @@ export default function AdminClient() {
     };
     const nextJobs = [provisionalJob, ...jobs];
     persist(nextJobs);
+    const response = await fetch(backendUrl("/api/jobs"), {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(provisionalJob),
+    });
+    if (!response.ok) {
+      setError("The client case could not be saved to the backend.");
+      return;
+    }
     openAudit(provisionalJob);
   }
 
   async function logout() {
+    await fetch(backendUrl("/api/session"), { method: "DELETE", credentials: "include" }).catch(() => undefined);
     await fetch("/api/admin/session", { method: "DELETE" });
     window.location.href = "/admin/login";
   }

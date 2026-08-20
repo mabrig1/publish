@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
+import { backendUrl } from "@/lib/backend-url";
 import styles from "./auditor.module.css";
 
 type AuditStatus = "pass" | "warn" | "fail";
@@ -107,19 +108,32 @@ export default function AuditorClient() {
   const [selectedJobId, setSelectedJobId] = useState("");
 
   useEffect(() => {
-    const savedJobs = readJobs();
-    setJobs(savedJobs);
-    const requestedJob = new URLSearchParams(window.location.search).get("job") || "";
-    const selected = savedJobs.find((job) => job.id === requestedJob);
-    if (selected) {
-      setSelectedJobId(selected.id);
-      setForm({
-        clientName: selected.clientName || "",
-        articleUrl: typeof selected.articleUrl === "string" ? selected.articleUrl : "",
-        expectedTitle: selected.title || "",
-        expectedDoi: typeof selected.doi === "string" ? selected.doi : "",
-      });
+    async function loadJobs() {
+      let savedJobs = readJobs();
+      try {
+        const response = await fetch(backendUrl("/api/jobs"), { cache: "no-store", credentials: "include" });
+        if (response.ok) {
+          const data = await response.json();
+          savedJobs = data.jobs || [];
+          localStorage.setItem("publishai_admin_jobs", JSON.stringify(savedJobs));
+        }
+      } catch {
+        // Use the last synchronized browser copy when offline.
+      }
+      setJobs(savedJobs);
+      const requestedJob = new URLSearchParams(window.location.search).get("job") || "";
+      const selected = savedJobs.find((job) => job.id === requestedJob);
+      if (selected) {
+        setSelectedJobId(selected.id);
+        setForm({
+          clientName: selected.clientName || "",
+          articleUrl: typeof selected.articleUrl === "string" ? selected.articleUrl : "",
+          expectedTitle: selected.title || "",
+          expectedDoi: typeof selected.doi === "string" ? selected.doi : "",
+        });
+      }
     }
+    loadJobs();
   }, []);
 
   const selectedJob = useMemo(() => jobs.find((job) => job.id === selectedJobId) || null, [jobs, selectedJobId]);
@@ -183,7 +197,7 @@ export default function AuditorClient() {
     window.history.replaceState({}, "", `/admin/scholar-auditor?job=${encodeURIComponent(job.id)}`);
   }
 
-  function saveAuditToClientCase(data: AuditResult) {
+  async function saveAuditToClientCase(data: AuditResult) {
     if (!selectedJobId) return;
     const summary: SavedAudit = {
       auditedAt: data.auditedAt,
@@ -210,6 +224,21 @@ export default function AuditorClient() {
     });
     localStorage.setItem("publishai_admin_jobs", JSON.stringify(nextJobs));
     setJobs(nextJobs);
+    const updated = nextJobs.find((job) => job.id === selectedJobId);
+    if (!updated) return;
+    const response = await fetch(backendUrl(`/api/jobs/${encodeURIComponent(selectedJobId)}`), {
+      method: "PATCH",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        articleUrl: updated.articleUrl,
+        doi: updated.doi,
+        scholarAudits: updated.scholarAudits,
+        latestScholarAudit: updated.latestScholarAudit,
+        status: updated.status,
+      }),
+    });
+    if (!response.ok) throw new Error("Audit completed, but saving it to the backend failed.");
   }
 
   async function runAudit(event: FormEvent) {
@@ -229,7 +258,7 @@ export default function AuditorClient() {
       setResult(data);
       try {
         localStorage.setItem("publishai_last_scholar_audit", JSON.stringify(data));
-        saveAuditToClientCase(data);
+        await saveAuditToClientCase(data);
       } catch {
         // Browser storage is optional.
       }
