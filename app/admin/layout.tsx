@@ -38,6 +38,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
         <a href="/admin/citation-auditor" style={{ ...linkStyle, background: "#9dd2ff", color: "#163a55" }}>Citation Auditor</a>
         <a href="/admin/visibility-pack" style={{ ...linkStyle, background: "#cab8ff", color: "#31245e" }}>Visibility Pack</a>
         <a href="/admin/scholar-auditor" style={{ ...linkStyle, background: "#71e0bd", color: "#10251f", fontWeight: 900 }}>Live Scholar Auditor</a>
+        <a href="/admin/system-health" style={{ ...linkStyle, background: "#d8dde2", color: "#22303a" }}>System Health</a>
       </nav>
     </>
   );
