@@ -45,6 +45,17 @@ type EngineResult = {
 
 type JobStatus = "New" | "In technical review" | "Awaiting client" | "Ready to submit" | "Visibility monitoring";
 
+type SavedAudit = {
+  auditedAt: string;
+  score: number;
+  grade: "strong" | "good" | "needs-work" | "poor";
+  compatibilityLabel: string;
+  finalUrl: string;
+  detectedTitle: string | null;
+  detectedDoi: string | null;
+  priorityFixes: string[];
+};
+
 type Job = {
   id: string;
   clientName: string;
@@ -55,6 +66,10 @@ type Job = {
   createdAt: string;
   report?: string;
   scholarStrategy?: ScholarStrategy;
+  articleUrl?: string;
+  doi?: string;
+  scholarAudits?: SavedAudit[];
+  latestScholarAudit?: SavedAudit;
 };
 
 type Tab = "overview" | "engine" | "visibility" | "jobs";
@@ -115,7 +130,7 @@ export default function AdminClient() {
       const saved = localStorage.getItem("publishai_admin_jobs");
       if (saved) setJobs(JSON.parse(saved));
     } catch {
-      // Ignore malformed local state.
+      // Ignore malformed browser storage.
     }
   }, []);
 
@@ -160,6 +175,9 @@ export default function AdminClient() {
         createdAt: new Date().toISOString(),
         report: data.report,
         scholarStrategy: data.scholarStrategy,
+        articleUrl: form.articleUrl || undefined,
+        doi: form.doi || undefined,
+        scholarAudits: [],
       };
       persist([job, ...jobs]);
     } catch (err) {
@@ -190,6 +208,28 @@ export default function AdminClient() {
     persist(jobs.map((job) => job.id === id ? { ...job, status } : job));
   }
 
+  function openAudit(job: Job) {
+    window.location.href = `/admin/scholar-auditor?job=${encodeURIComponent(job.id)}`;
+  }
+
+  function openCurrentFormAudit() {
+    const provisionalJob: Job = {
+      id: crypto.randomUUID(),
+      clientName: form.clientName || "Unnamed client",
+      title: form.title || "Untitled article",
+      field: form.field,
+      goal: form.publicationGoal,
+      status: "Visibility monitoring",
+      createdAt: new Date().toISOString(),
+      articleUrl: form.articleUrl || undefined,
+      doi: form.doi || undefined,
+      scholarAudits: [],
+    };
+    const nextJobs = [provisionalJob, ...jobs];
+    persist(nextJobs);
+    openAudit(provisionalJob);
+  }
+
   async function logout() {
     await fetch("/api/admin/session", { method: "DELETE" });
     window.location.href = "/admin/login";
@@ -218,9 +258,10 @@ export default function AdminClient() {
           <button className={`${styles.navButton} ${tab === "overview" ? styles.navButtonActive : ""}`} onClick={() => setTab("overview")}>Overview</button>
           <button className={`${styles.navButton} ${tab === "engine" ? styles.navButtonActive : ""}`} onClick={() => setTab("engine")}>AI Publishing Engine</button>
           <button className={`${styles.navButton} ${tab === "visibility" ? styles.navButtonActive : ""}`} onClick={() => setTab("visibility")}>Google Scholar Strategy</button>
+          <a className={styles.navButton} href="/admin/scholar-auditor" style={{ display: "block", textDecoration: "none" }}>Live Scholar Auditor</a>
           <button className={`${styles.navButton} ${tab === "jobs" ? styles.navButtonActive : ""}`} onClick={() => setTab("jobs")}>Client Jobs</button>
           <a className={styles.navButton} href="/free-journals" style={{ display: "block", textDecoration: "none" }}>Journal Intelligence</a>
-          <div className={styles.sideNote}><strong>Africa-first publisher advantage</strong><br />Combine manuscript diagnostics, reputable-journal evidence, Google Scholar readiness, metadata, repository strategy and post-publication monitoring in one client workflow.</div>
+          <div className={styles.sideNote}><strong>Africa-first publisher advantage</strong><br />Every client case can now move from manuscript strategy into a live Google Scholar technical audit with audit history attached to the job.</div>
         </aside>
 
         <main className={styles.content}>
@@ -240,29 +281,29 @@ export default function AdminClient() {
 
               <div className={styles.grid2}>
                 <section className={styles.card}>
-                  <div className={styles.eyebrow}>CORE PUBLISHING ENGINE</div>
-                  <h3>From client name to publication roadmap</h3>
-                  <p className={styles.muted}>Start with the author, capture the manuscript and goal, then map the exact technical services needed instead of giving every client the same generic package.</p>
+                  <div className={styles.eyebrow}>CONNECTED CLIENT WORKFLOW</div>
+                  <h3>From client name to measurable publication readiness</h3>
+                  <p className={styles.muted}>Create the publishing roadmap, keep DOI and article URL inside the job, then launch the live Scholar auditor from that same case. Re-audits build a client history instead of creating disconnected reports.</p>
                   <div className={styles.quickGrid}>
                     <div className={styles.quick}><strong>1. Profile</strong><span>Author identity, affiliation, ORCID, article stage and publication goal.</span></div>
-                    <div className={styles.quick}><strong>2. Diagnose</strong><span>Structure, evidence, language, references, ethics and technical readiness.</span></div>
-                    <div className={styles.quick}><strong>3. Publish</strong><span>Journal fit, reputation, APC/waiver evidence, formatting and submission package.</span></div>
-                    <div className={styles.quick}><strong>4. Amplify</strong><span>Scholar metadata, crawlability, repositories, DOI alignment and monitoring.</span></div>
+                    <div className={styles.quick}><strong>2. Prepare</strong><span>Manuscript diagnosis, journal fit, references and submission package.</span></div>
+                    <div className={styles.quick}><strong>3. Audit live</strong><span>Test the published article page for Scholar-compatible metadata and crawlability.</span></div>
+                    <div className={styles.quick}><strong>4. Re-audit</strong><span>Track score improvements and priority fixes inside the same client case.</span></div>
                   </div>
                   <div className={styles.formActions}><button className={styles.primary} onClick={() => setTab("engine")}>Start a new client job</button></div>
                 </section>
 
                 <section className={styles.card}>
-                  <div className={styles.eyebrow}>HIGH-VALUE DIFFERENTIATOR</div>
-                  <h3>Google Scholar & research visibility intelligence</h3>
-                  <p className={styles.muted}>When a client asks “How can my work appear in Google Scholar?”, the dashboard creates a phased readiness and troubleshooting plan rather than making an indexing guarantee.</p>
+                  <div className={styles.eyebrow}>LIVE SCHOLAR AUDITOR</div>
+                  <h3>Turn discoverability advice into a technical service</h3>
+                  <p className={styles.muted}>The auditor checks the real article page for metadata, DOI consistency, abstract visibility, PDF linkage, robots directives and other Scholar compatibility signals.</p>
                   <div className={styles.quickGrid}>
-                    <div className={styles.quick}><strong>Metadata Architecture</strong><span>Title, authors, date, journal, DOI, citation tags and canonical URLs.</span></div>
-                    <div className={styles.quick}><strong>Crawler Readiness</strong><span>Robots access, simple links, stable pages, searchable PDFs and redirects.</span></div>
-                    <div className={styles.quick}><strong>Legitimate Distribution</strong><span>Publisher site, institutional repositories and permitted self-archiving.</span></div>
-                    <div className={styles.quick}><strong>Indexing Diagnostics</strong><span>Exact-title checks, site coverage, metadata parsing and crawl troubleshooting.</span></div>
+                    <div className={styles.quick}><strong>Pre-filled client case</strong><span>Name and title load from the selected publishing job.</span></div>
+                    <div className={styles.quick}><strong>Persistent audit trail</strong><span>Scores and repair priorities are stored back into the client job.</span></div>
+                    <div className={styles.quick}><strong>Technical repair map</strong><span>PASS, REVIEW and FIX findings support premium troubleshooting work.</span></div>
+                    <div className={styles.quick}><strong>No false promises</strong><span>Compatibility is measured; Google still controls indexing decisions and timing.</span></div>
                   </div>
-                  <div className={styles.formActions}><button className={styles.primary} onClick={() => setTab("visibility")}>Open Scholar playbook</button></div>
+                  <div className={styles.formActions}><a className={styles.primary} href="/admin/scholar-auditor" style={{ textDecoration: "none" }}>Open live auditor</a></div>
                 </section>
               </div>
             </>
@@ -271,45 +312,28 @@ export default function AdminClient() {
           {tab === "visibility" && (
             <>
               <div className={styles.headingRow}>
-                <div><div className={styles.eyebrow}>GOOGLE SCHOLAR & GLOBAL DISCOVERABILITY</div><h1>Publisher visibility playbook</h1><p>Use this as a premium technical service: diagnose eligibility, improve machine-readable metadata, strengthen legitimate discovery routes and monitor the published record.</p></div>
-                <span className={styles.badge}>No false guarantees</span>
+                <div><div className={styles.eyebrow}>GOOGLE SCHOLAR & GLOBAL DISCOVERABILITY</div><h1>Publisher visibility playbook</h1><p>Diagnose eligibility, improve machine-readable metadata, strengthen legitimate discovery routes, and verify the result against the live article page.</p></div>
+                <span className={styles.badge}>Strategy + live audit</span>
               </div>
-
               <div className={styles.grid2}>
                 <section className={styles.card}>
-                  <div className={styles.eyebrow}>WHAT PUBLISHAI CAN CONTROL</div>
-                  <h3>Engineer the conditions for discoverability</h3>
+                  <div className={styles.eyebrow}>STRATEGY ENGINE</div>
+                  <h3>Map the conditions for discoverability</h3>
                   <div className={styles.quickGrid}>
                     <div className={styles.quick}><strong>Author identity</strong><span>Consistent names, affiliation and ORCID linkage.</span></div>
                     <div className={styles.quick}><strong>Article metadata</strong><span>Scholar-compatible citation tags and accurate DOI/bibliographic data.</span></div>
-                    <div className={styles.quick}><strong>Article architecture</strong><span>One stable URL per article, complete visible abstract and linked full text.</span></div>
-                    <div className={styles.quick}><strong>Technical crawlability</strong><span>Robots access, HTTP health, permanent redirects and simple browse links.</span></div>
-                    <div className={styles.quick}><strong>Repository strategy</strong><span>Institutional or appropriate repository deposits where rights permit.</span></div>
-                    <div className={styles.quick}><strong>Monitoring</strong><span>Exact-title, author and site-coverage checks with a troubleshooting log.</span></div>
-                  </div>
-                </section>
-
-                <section className={styles.card}>
-                  <div className={styles.eyebrow}>WHAT GOOGLE CONTROLS</div>
-                  <h3>Index inclusion, update timing and ranking</h3>
-                  <p className={styles.muted}>Google Scholar automatically crawls and parses scholarly material. The publisher can make the article technically eligible and easy to understand, but cannot force Google to include a record or promise when it will appear.</p>
-                  <div className={styles.quickGrid}>
-                    <div className={styles.quick}><strong>Inclusion</strong><span>Determined by Google Scholar's automated systems and content/technical criteria.</span></div>
-                    <div className={styles.quick}><strong>Timing</strong><span>New records and corrections can appear on different schedules; never sell a fixed indexing date.</span></div>
-                    <div className={styles.quick}><strong>Version grouping</strong><span>Scholar may group publisher, preprint and repository versions of the same work.</span></div>
-                    <div className={styles.quick}><strong>Ranking</strong><span>Citation and indexing algorithms remain under Google's control.</span></div>
+                    <div className={styles.quick}><strong>Article architecture</strong><span>One stable URL per article, visible abstract and linked full text.</span></div>
+                    <div className={styles.quick}><strong>Monitoring</strong><span>Exact-title, author and site-coverage checks with troubleshooting records.</span></div>
                   </div>
                   <div className={styles.formActions}><button className={styles.primary} onClick={startScholarJob}>Build a client Scholar strategy</button></div>
                 </section>
+                <section className={styles.card}>
+                  <div className={styles.eyebrow}>LIVE VERIFICATION</div>
+                  <h3>Audit what is actually published</h3>
+                  <p className={styles.muted}>Once a journal or repository page is live, run the compatibility auditor and store the findings against the same client case.</p>
+                  <div className={styles.formActions}><a className={styles.primary} href="/admin/scholar-auditor" style={{ textDecoration: "none" }}>Run live compatibility audit</a></div>
+                </section>
               </div>
-
-              <section className={styles.card} style={{ marginTop: 18 }}>
-                <div className={styles.eyebrow}>8-PHASE PREMIUM SERVICE</div>
-                <h3>The strategy the engine maps for every client</h3>
-                <div className={styles.quickGrid}>
-                  {["Author identity & citation identity", "Publication venue & Scholar evidence", "Canonical article metadata", "Scholar-compatible landing page", "Searchable full text / PDF", "Crawlability & technical indexing", "Legitimate discovery routes", "Scholar monitoring & troubleshooting"].map((item, index) => <div className={styles.quick} key={item}><strong>{index + 1}. {item}</strong><span>Generated and personalized from the client's actual publication stage and available metadata.</span></div>)}
-                </div>
-              </section>
             </>
           )}
 
@@ -351,12 +375,11 @@ export default function AdminClient() {
                   </div>
 
                   <div className={styles.servicesTitle}>4. Select premium technical services</div>
-                  <div className={styles.services}>
-                    {serviceOptions.map((service) => <label className={styles.service} key={service}><input type="checkbox" checked={services.includes(service)} onChange={() => toggleService(service)} /><span>{service}</span></label>)}
-                  </div>
+                  <div className={styles.services}>{serviceOptions.map((service) => <label className={styles.service} key={service}><input type="checkbox" checked={services.includes(service)} onChange={() => toggleService(service)} /><span>{service}</span></label>)}</div>
 
                   <div className={styles.formActions}>
                     <button className={styles.primary} disabled={loading}>{loading ? `Building strategy for ${form.clientName || "client"}…` : `Generate ${form.clientName ? `${form.clientName}'s` : "client"} publishing roadmap`}</button>
+                    <button type="button" className={styles.secondary} disabled={!form.articleUrl} onClick={openCurrentFormAudit}>Audit article URL now</button>
                     <button type="button" className={styles.secondary} onClick={() => { setForm(blankForm); setServices(defaultServices); setResult(null); setError(""); }}>Clear</button>
                   </div>
                   {error && <div className={styles.error}>{error}</div>}
@@ -364,36 +387,23 @@ export default function AdminClient() {
 
                 <section className={styles.reportCard}>
                   {!result ? (
-                    <div className={styles.placeholder}><div><strong>Client roadmap appears here</strong><span>The engine will combine manuscript diagnostics, journal evidence, Google Scholar readiness, metadata, repository strategy and selected premium services.</span></div></div>
+                    <div className={styles.placeholder}><div><strong>Client roadmap appears here</strong><span>The engine combines manuscript diagnostics, journal evidence, Scholar readiness and selected premium services. Once an article URL is available, launch the live audit from the same case.</span></div></div>
                   ) : (
                     <>
                       <div className={styles.reportHead}>
                         <div><h3>{result.scholarStrategy.clientName}'s publishing roadmap</h3><span>{result.aiEnabled ? `${result.aiProvider} / ${result.aiModel}` : "Deterministic technical workflow"} · {new Date(result.generatedAt).toLocaleString()}</span></div>
                         <div className={styles.reportActions}><button className={styles.secondary} onClick={copyReport}>Copy</button><button className={styles.secondary} onClick={downloadReport}>Download</button></div>
                       </div>
-
                       <section className={styles.card} style={{ marginBottom: 16 }}>
                         <div className={styles.eyebrow}>GOOGLE SCHOLAR / DISCOVERABILITY READINESS</div>
                         <div className={styles.headingRow} style={{ marginBottom: 8 }}><div><h3 style={{ margin: 0 }}>{result.scholarStrategy.readinessScore}/100 · {result.scholarStrategy.readinessStatus}</h3><p>{result.scholarStrategy.goal}</p></div><span className={styles.badge}>Internal readiness score</span></div>
                         <div style={{ height: 10, background: "#e8edf4", borderRadius: 999, overflow: "hidden", marginBottom: 14 }}><div style={{ width: `${result.scholarStrategy.readinessScore}%`, height: "100%", background: "#176b55" }} /></div>
                         <p className={styles.muted}>{result.scholarStrategy.controllableOutcome}</p>
-                        <div className={styles.sideNote}><strong>Important:</strong> {result.scholarStrategy.guaranteeNotice}</div>
                       </section>
-
-                      <div className={styles.servicesTitle}>Personalized 8-phase visibility map</div>
-                      <div className={styles.quickGrid} style={{ marginBottom: 18 }}>
-                        {result.scholarStrategy.phases.map((phase) => <div className={styles.quick} key={phase.id}><strong>{phase.title}</strong><span>{phase.status.replaceAll("-", " ")} · {phase.objective}</span><ul style={{ margin: "9px 0 0", paddingLeft: 18 }}>{phase.actions.slice(0, 3).map((action) => <li key={action} style={{ marginBottom: 5 }}>{action}</li>)}</ul></div>)}
-                      </div>
-
                       <div className={styles.report}>{result.report}</div>
-
-                      <div className={styles.servicesTitle}>Publisher deliverables to package for this client</div>
+                      <div className={styles.servicesTitle}>Publisher deliverables</div>
                       <div className={styles.candidateList}>{result.scholarStrategy.publisherDeliverables.map((item) => <div className={styles.candidate} key={item}><strong>{item}</strong></div>)}</div>
-
-                      {result.candidates.length > 0 && <><div className={styles.servicesTitle}>Registry-derived journal candidates</div><div className={styles.candidateList}>{result.candidates.slice(0, 5).map((journal) => <div className={styles.candidate} key={journal.id}><strong>{journal.name}</strong><span>{journal.publisher || "Publisher not returned"} · {journal.isInDoaj ? "DOAJ signal" : journal.isOpenAccess ? "OA signal" : "Access model requires checking"} · {journal.feeStatus.replaceAll("-", " ")}</span></div>)}</div></>}
-
-                      <div className={styles.servicesTitle}>Scholar verification searches</div>
-                      <div className={styles.candidateList}>{result.scholarStrategy.verificationQueries.map((query) => <div className={styles.candidate} key={query}><strong>{query}</strong><span>Use after publication / when diagnosing coverage.</span></div>)}</div>
+                      {result.candidates.length > 0 && <><div className={styles.servicesTitle}>Registry-derived journal candidates</div><div className={styles.candidateList}>{result.candidates.slice(0, 5).map((journal) => <div className={styles.candidate} key={journal.id}><strong>{journal.name}</strong><span>{journal.publisher || "Publisher not returned"} · {journal.isInDoaj ? "DOAJ signal" : journal.isOpenAccess ? "OA signal" : "Access model requires checking"}</span></div>)}</div></>}
                     </>
                   )}
                 </section>
@@ -404,10 +414,25 @@ export default function AdminClient() {
           {tab === "jobs" && (
             <>
               <div className={styles.headingRow}>
-                <div><div className={styles.eyebrow}>CLIENT PIPELINE</div><h1>Publishing jobs</h1><p>Track each manuscript from author intake through submission and visibility monitoring.</p></div>
+                <div><div className={styles.eyebrow}>CLIENT PIPELINE</div><h1>Publishing jobs</h1><p>Track each manuscript from author intake through submission, live Scholar auditing and visibility monitoring.</p></div>
                 <button className={styles.primary} onClick={() => setTab("engine")}>New job</button>
               </div>
-              {jobs.length === 0 ? <div className={styles.empty}>No client jobs yet. Run the publishing engine to create the first one.</div> : <div className={styles.jobs}>{jobs.map((job) => <article className={styles.job} key={job.id}><div><strong>{job.title}</strong><small>{job.clientName} · {job.field || "Field not specified"} · {job.goal || "Publication support"} · {new Date(job.createdAt).toLocaleDateString()}</small></div><select value={job.status} onChange={(e) => updateStatus(job.id, e.target.value as JobStatus)}><option>New</option><option>In technical review</option><option>Awaiting client</option><option>Ready to submit</option><option>Visibility monitoring</option></select><button className={styles.secondary} onClick={() => { if (job.report && job.scholarStrategy) { setResult({ report: job.report, aiEnabled: false, candidates: [], scholarStrategy: job.scholarStrategy, generatedAt: job.createdAt }); setForm({ ...blankForm, title: job.title, clientName: job.clientName, field: job.field, publicationGoal: job.goal }); setTab("engine"); } }}>Open roadmap</button></article>)}</div>}
+              {jobs.length === 0 ? <div className={styles.empty}>No client jobs yet. Run the publishing engine to create the first one.</div> : (
+                <div className={styles.jobs}>
+                  {jobs.map((job) => (
+                    <article className={styles.job} key={job.id}>
+                      <div>
+                        <strong>{job.title}</strong>
+                        <small>{job.clientName} · {job.field || "Field not specified"} · {job.goal || "Publication support"} · {new Date(job.createdAt).toLocaleDateString()}</small>
+                        {job.latestScholarAudit && <small>Latest Scholar audit: {job.latestScholarAudit.score}/100 · {job.latestScholarAudit.grade.replaceAll("-", " ")} · {new Date(job.latestScholarAudit.auditedAt).toLocaleDateString()}</small>}
+                      </div>
+                      <select value={job.status} onChange={(e) => updateStatus(job.id, e.target.value as JobStatus)}><option>New</option><option>In technical review</option><option>Awaiting client</option><option>Ready to submit</option><option>Visibility monitoring</option></select>
+                      <button className={styles.secondary} onClick={() => openAudit(job)}>{job.latestScholarAudit ? "Re-audit Scholar" : "Audit Scholar"}</button>
+                      <button className={styles.secondary} onClick={() => { if (job.report && job.scholarStrategy) { setResult({ report: job.report, aiEnabled: false, candidates: [], scholarStrategy: job.scholarStrategy, generatedAt: job.createdAt }); setForm({ ...blankForm, title: job.title, clientName: job.clientName, field: job.field, publicationGoal: job.goal, articleUrl: job.articleUrl || "", doi: job.doi || "" }); setTab("engine"); } }}>Open roadmap</button>
+                    </article>
+                  ))}
+                </div>
+              )}
             </>
           )}
         </main>
