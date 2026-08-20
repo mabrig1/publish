@@ -37,19 +37,34 @@ export type ScholarStrategyInput = {
 };
 
 const clean = (value: string) => value.trim();
+const isWebUrl = (value: string) => {
+  try {
+    const url = new URL(clean(value));
+    return url.protocol === "http:" || url.protocol === "https:";
+  } catch {
+    return false;
+  }
+};
+const safeHostname = (value: string) => {
+  try {
+    return new URL(clean(value)).hostname;
+  } catch {
+    return "TARGET-DOMAIN";
+  }
+};
 
 export function buildScholarStrategy(input: ScholarStrategyInput): ScholarStrategy {
   let score = 0;
   if (clean(input.clientName)) score += 8;
   if (clean(input.authorAffiliation)) score += 7;
-  if (/^https?:\/\/(orcid\.org\/)?\d{4}-\d{4}-\d{4}-[\dX]{4}$/i.test(clean(input.orcid)) || /^\d{4}-\d{4}-\d{4}-[\dX]{4}$/i.test(clean(input.orcid))) score += 5;
+  if (/^(https?:\/\/orcid\.org\/)?\d{4}-\d{4}-\d{4}-[\dX]{4}$/i.test(clean(input.orcid))) score += 5;
   if (clean(input.title)) score += 12;
   if (clean(input.abstract).length >= 150) score += 10;
   if (clean(input.targetJournal)) score += 10;
   if (clean(input.publicationDate)) score += 5;
   if (clean(input.doi)) score += 10;
-  if (/^https?:\/\//i.test(clean(input.articleUrl))) score += 15;
-  if (/^https?:\/\//i.test(clean(input.fullTextUrl))) score += 10;
+  if (isWebUrl(input.articleUrl)) score += 15;
+  if (isWebUrl(input.fullTextUrl)) score += 10;
   if (["accepted", "published"].includes(clean(input.publicationStage).toLowerCase())) score += 8;
 
   score = Math.min(100, score);
@@ -96,10 +111,10 @@ export function buildScholarStrategy(input: ScholarStrategyInput): ScholarStrate
     {
       id: "landing-page",
       title: "4. Scholar-compatible article landing page",
-      status: /^https?:\/\//i.test(clean(input.articleUrl)) ? "ready" : "action-required",
+      status: isWebUrl(input.articleUrl) ? "ready" : "action-required",
       objective: "Give each article one stable, crawlable URL with enough information for humans and scholarly crawlers.",
       actions: [
-        /^https?:\/\//i.test(clean(input.articleUrl)) ? `Audit the canonical article URL: ${clean(input.articleUrl)}.` : "Once published, capture the permanent article landing-page URL.",
+        isWebUrl(input.articleUrl) ? `Audit the canonical article URL: ${clean(input.articleUrl)}.` : "Once published, capture the permanent article landing-page URL.",
         "The article should have its own URL; do not place multiple article abstracts on one page.",
         "Show at least the complete author-written abstract without requiring login, form submission or JavaScript-only navigation.",
         "Use ordinary HTML links so crawlers can reach the article from journal/archive browse pages.",
@@ -108,10 +123,10 @@ export function buildScholarStrategy(input: ScholarStrategyInput): ScholarStrate
     {
       id: "fulltext",
       title: "5. Searchable full text / PDF",
-      status: /^https?:\/\//i.test(clean(input.fullTextUrl)) ? "ready" : "needs-input",
+      status: isWebUrl(input.fullTextUrl) ? "ready" : "needs-input",
       objective: "Make the authoritative or legally shareable full text machine-readable and correctly associated with the article record.",
       actions: [
-        /^https?:\/\//i.test(clean(input.fullTextUrl)) ? `Check that the supplied full-text URL is persistent and crawlable: ${clean(input.fullTextUrl)}.` : "Capture the publisher PDF or a legally permitted repository manuscript URL when available.",
+        isWebUrl(input.fullTextUrl) ? `Check that the supplied full-text URL is persistent and crawlable: ${clean(input.fullTextUrl)}.` : "Capture the publisher PDF or a legally permitted repository manuscript URL when available.",
         "Use searchable text rather than an image-only scan; the title should be prominent, authors clearly listed, and the references section explicitly labelled.",
         "If hosting the PDF yourself for Scholar discovery, keep it within Google's documented Scholar file-size and formatting requirements.",
         "Respect the journal's copyright/self-archiving policy before depositing an accepted manuscript or publisher PDF elsewhere.",
@@ -120,7 +135,7 @@ export function buildScholarStrategy(input: ScholarStrategyInput): ScholarStrate
     {
       id: "crawl",
       title: "6. Crawlability & technical indexing",
-      status: /^https?:\/\//i.test(clean(input.articleUrl)) ? "action-required" : "needs-input",
+      status: isWebUrl(input.articleUrl) ? "action-required" : "needs-input",
       objective: "Prevent technical configuration from hiding a legitimate scholarly article from search robots.",
       actions: [
         "Check robots.txt and page-level robots directives so article and browse URLs are not blocked from Google crawlers.",
@@ -167,7 +182,7 @@ export function buildScholarStrategy(input: ScholarStrategyInput): ScholarStrate
     verificationQueries: [
       `\"${title}\"`,
       `${author} ${clean(input.title).split(/\s+/).slice(0, 5).join(" ")}`.trim(),
-      clean(input.articleUrl) ? `site:${new URL(input.articleUrl).hostname} \"${clean(input.title).slice(0, 80)}\"` : "site:TARGET-DOMAIN \"ARTICLE TITLE\"",
+      isWebUrl(input.articleUrl) ? `site:${safeHostname(input.articleUrl)} \"${clean(input.title).slice(0, 80)}\"` : "site:TARGET-DOMAIN \"ARTICLE TITLE\"",
     ],
     metadataChecklist: [
       "citation_title",
