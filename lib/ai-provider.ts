@@ -77,7 +77,7 @@ export function configuredAiProviders(): AiProviderName[] {
 
 export async function generateWithAiFallback(prompt: string): Promise<AiProviderResult | null> {
   if (process.env.OPENAI_API_KEY) {
-    const model = process.env.OPENAI_MODEL || "gpt-5.6-luna";
+    const model = process.env.OPENAI_MODEL || "gpt-5.6-terra";
     const text = await callResponsesApi({
       endpoint: "https://api.openai.com/v1/responses",
       apiKey: process.env.OPENAI_API_KEY,
@@ -103,7 +103,7 @@ export async function generateWithAiFallback(prompt: string): Promise<AiProvider
   }
 
   if (process.env.GROQ_API_KEY) {
-    const model = process.env.GROQ_MODEL || "openai/gpt-oss-20b";
+    const model = process.env.GROQ_MODEL || "openai/gpt-oss-120b";
     const text = await callResponsesApi({
       endpoint: "https://api.groq.com/openai/v1/responses",
       apiKey: process.env.GROQ_API_KEY,
@@ -114,7 +114,7 @@ export async function generateWithAiFallback(prompt: string): Promise<AiProvider
   }
 
   if (process.env.GEMINI_API_KEY) {
-    const model = process.env.GEMINI_MODEL || "gemini-3.6-flash";
+    const model = process.env.GEMINI_MODEL || "gemini-3.7-flash";
     const text = await callGemini(process.env.GEMINI_API_KEY, model, prompt);
     if (text) return { text, provider: "gemini", model };
   }
