@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import styles from "./auditor.module.css";
 
 type AuditStatus = "pass" | "warn" | "fail";
@@ -49,6 +49,32 @@ type AuditResult = {
   manualChecks: string[];
 };
 
+type SavedAudit = {
+  auditedAt: string;
+  score: number;
+  grade: AuditResult["grade"];
+  compatibilityLabel: string;
+  finalUrl: string;
+  detectedTitle: string | null;
+  detectedDoi: string | null;
+  priorityFixes: string[];
+};
+
+type LocalJob = {
+  id: string;
+  clientName: string;
+  title: string;
+  field?: string;
+  goal?: string;
+  status?: string;
+  createdAt?: string;
+  report?: string;
+  doi?: string;
+  articleUrl?: string;
+  scholarAudits?: SavedAudit[];
+  [key: string]: unknown;
+};
+
 const initialForm = {
   clientName: "",
   articleUrl: "",
@@ -62,12 +88,42 @@ function statusLabel(status: AuditStatus) {
   return "FIX";
 }
 
+function readJobs(): LocalJob[] {
+  try {
+    const raw = localStorage.getItem("publishai_admin_jobs");
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
 export default function AuditorClient() {
   const [form, setForm] = useState(initialForm);
   const [result, setResult] = useState<AuditResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
+  const [jobs, setJobs] = useState<LocalJob[]>([]);
+  const [selectedJobId, setSelectedJobId] = useState("");
+
+  useEffect(() => {
+    const savedJobs = readJobs();
+    setJobs(savedJobs);
+    const requestedJob = new URLSearchParams(window.location.search).get("job") || "";
+    const selected = savedJobs.find((job) => job.id === requestedJob);
+    if (selected) {
+      setSelectedJobId(selected.id);
+      setForm({
+        clientName: selected.clientName || "",
+        articleUrl: typeof selected.articleUrl === "string" ? selected.articleUrl : "",
+        expectedTitle: selected.title || "",
+        expectedDoi: typeof selected.doi === "string" ? selected.doi : "",
+      });
+    }
+  }, []);
+
+  const selectedJob = useMemo(() => jobs.find((job) => job.id === selectedJobId) || null, [jobs, selectedJobId]);
+  const auditHistory = selectedJob?.scholarAudits || [];
 
   const reportText = useMemo(() => {
     if (!result) return "";
@@ -109,6 +165,53 @@ export default function AuditorClient() {
     ].join("\n");
   }, [form.expectedTitle, result]);
 
+  function selectClientJob(jobId: string) {
+    setSelectedJobId(jobId);
+    setResult(null);
+    setError("");
+    const job = jobs.find((item) => item.id === jobId);
+    if (!job) {
+      setForm(initialForm);
+      return;
+    }
+    setForm({
+      clientName: job.clientName || "",
+      articleUrl: typeof job.articleUrl === "string" ? job.articleUrl : "",
+      expectedTitle: job.title || "",
+      expectedDoi: typeof job.doi === "string" ? job.doi : "",
+    });
+    window.history.replaceState({}, "", `/admin/scholar-auditor?job=${encodeURIComponent(job.id)}`);
+  }
+
+  function saveAuditToClientCase(data: AuditResult) {
+    if (!selectedJobId) return;
+    const summary: SavedAudit = {
+      auditedAt: data.auditedAt,
+      score: data.score,
+      grade: data.grade,
+      compatibilityLabel: data.compatibilityLabel,
+      finalUrl: data.finalUrl,
+      detectedTitle: data.detected.title,
+      detectedDoi: data.detected.doi,
+      priorityFixes: data.priorityFixes.slice(0, 8),
+    };
+    const currentJobs = readJobs();
+    const nextJobs = currentJobs.map((job) => {
+      if (job.id !== selectedJobId) return job;
+      const history = Array.isArray(job.scholarAudits) ? job.scholarAudits : [];
+      return {
+        ...job,
+        articleUrl: data.finalUrl || form.articleUrl,
+        doi: data.detected.doi || form.expectedDoi || job.doi,
+        scholarAudits: [...history, summary].slice(-10),
+        latestScholarAudit: summary,
+        status: data.score >= 80 ? "Visibility monitoring" : job.status,
+      };
+    });
+    localStorage.setItem("publishai_admin_jobs", JSON.stringify(nextJobs));
+    setJobs(nextJobs);
+  }
+
   async function runAudit(event: FormEvent) {
     event.preventDefault();
     setLoading(true);
@@ -126,6 +229,7 @@ export default function AuditorClient() {
       setResult(data);
       try {
         localStorage.setItem("publishai_last_scholar_audit", JSON.stringify(data));
+        saveAuditToClientCase(data);
       } catch {
         // Browser storage is optional.
       }
@@ -160,18 +264,26 @@ export default function AuditorClient() {
         <div>
           <div className={styles.eyebrow}>LIVE GOOGLE SCHOLAR COMPATIBILITY AUDITOR</div>
           <h1>Inspect the real article page before promising visibility.</h1>
-          <p>Paste a client's published article landing-page URL. PublishAI fetches the live page and audits the technical signals Google Scholar depends on for crawling and bibliographic parsing.</p>
+          <p>Select a client case or paste a published article URL. PublishAI audits the live page and keeps the result connected to the publisher's client workflow.</p>
         </div>
         <div className={styles.heroBadge}>Publisher-only technical service</div>
       </section>
 
       <section className={styles.notice}>
-        <strong>What this does:</strong> tests technical compatibility and produces fixes. <strong>What it does not do:</strong> force Google Scholar inclusion, verify ranking, or guarantee an indexing date.
+        <strong>Connected workflow:</strong> select a saved client job to prefill author/title/DOI/URL, then each completed audit is stored in that client's audit history. <strong>No indexing guarantee:</strong> Google still controls inclusion and timing.
       </section>
 
       <div className={styles.grid}>
         <form className={styles.formCard} onSubmit={runAudit}>
           <div className={styles.sectionTitle}>Client case</div>
+          <label>
+            <span>Load saved client job</span>
+            <select value={selectedJobId} onChange={(event) => selectClientJob(event.target.value)}>
+              <option value="">Standalone audit / choose a client</option>
+              {jobs.map((job) => <option value={job.id} key={job.id}>{job.clientName} — {job.title}</option>)}
+            </select>
+            <small>{selectedJob ? `Connected to ${selectedJob.clientName}'s publishing case.` : "Choose a saved job to attach this audit to the client's case."}</small>
+          </label>
           <label>
             <span>Client / author name</span>
             <input value={form.clientName} onChange={(event) => setForm({ ...form, clientName: event.target.value })} placeholder="e.g. Dr. Ada Nwosu" />
@@ -190,6 +302,15 @@ export default function AuditorClient() {
             <input value={form.expectedDoi} onChange={(event) => setForm({ ...form, expectedDoi: event.target.value })} placeholder="10.xxxx/xxxxx" />
           </label>
 
+          {selectedJob && auditHistory.length > 0 && (
+            <div className={styles.auditList}>
+              <strong>Previous audits for this client</strong>
+              {[...auditHistory].reverse().slice(0, 4).map((audit) => (
+                <span key={`${audit.auditedAt}-${audit.score}`}>{new Date(audit.auditedAt).toLocaleDateString()} · {audit.score}/100 · {audit.grade.replaceAll("-", " ")}</span>
+              ))}
+            </div>
+          )}
+
           <div className={styles.auditList}>
             <strong>The live audit checks</strong>
             <span>HTTP availability and redirects</span>
@@ -202,7 +323,8 @@ export default function AuditorClient() {
             <span>One scholarly article per landing page</span>
           </div>
 
-          <button className={styles.primary} disabled={loading}>{loading ? "Auditing live article page…" : "Run live Scholar compatibility audit"}</button>
+          <button className={styles.primary} disabled={loading}>{loading ? "Auditing live article page…" : selectedJob ? `Audit & save to ${selectedJob.clientName}'s case` : "Run live Scholar compatibility audit"}</button>
+          <a href="/admin" style={{ textAlign: "center", fontWeight: 700, textDecoration: "none" }}>← Back to publisher dashboard</a>
           {error && <div className={styles.error}>{error}</div>}
         </form>
 
@@ -228,6 +350,7 @@ export default function AuditorClient() {
                 <button onClick={copyReport}>{copied ? "Copied ✓" : "Copy client report"}</button>
                 <button onClick={downloadReport}>Download report</button>
               </div>
+              {selectedJob && <div className={styles.goodBox}>Saved to {selectedJob.clientName}'s client case. This score is now part of the job's Scholar audit history.</div>}
 
               <div className={styles.sectionTitle}>Detected publication record</div>
               <div className={styles.metadataGrid}>
