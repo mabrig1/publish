@@ -7,7 +7,7 @@ import { database, databaseConfigured } from "../lib/database.js";
 import { requireAdmin, sessionCookie, sessionToken, verifyAdminKey } from "../lib/auth.js";
 
 const app = express();
-const frontendOrigins = (process.env.FRONTEND_URL || "")
+const frontendOrigins = (process.env.FRONTEND_URL || "https://publisher.mabrigkorie.org")
   .split(",")
   .map((value) => value.trim().replace(/\/$/, ""))
   .filter(Boolean);

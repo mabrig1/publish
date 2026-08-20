@@ -66,7 +66,7 @@ The admin key is validated server-side and stored in an HttpOnly session cookie 
 
 Deploy this repository as two Vercel projects:
 
-- `publish`: root directory `/`, framework Next.js, with `NEXT_PUBLIC_BACKEND_URL=https://publish-kkmm.vercel.app`.
+- `publish`: root directory `/`, framework Next.js, custom domain `publisher.mabrigkorie.org`, with `NEXT_PUBLIC_BACKEND_URL=https://publisher-api.mabrigkorie.org`.
 - `publish-kkmm`: root directory `backend`, framework Express, with the variables below.
 
 The Express service stores client jobs, pipeline status and Google Scholar audit histories in MongoDB so the dashboard works across browsers and devices:
@@ -75,7 +75,7 @@ The Express service stores client jobs, pipeline status and Google Scholar audit
 MONGODB_URI=mongodb+srv://<user>:<password>@<cluster>/<database>
 MONGODB_DB=publishai
 ADMIN_ACCESS_KEY=<same strong key used by the frontend>
-FRONTEND_URL=https://publish-gilt-one.vercel.app
+FRONTEND_URL=https://publisher.mabrigkorie.org
 ```
 
 Create a MongoDB Atlas database user, allow Vercel's serverless connections in Atlas Network Access, and store these variables only in the `publish-kkmm` project. The public backend health endpoint is `/api/health` and never returns credentials.
