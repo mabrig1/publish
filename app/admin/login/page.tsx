@@ -23,13 +23,20 @@ export default function AdminLoginPage() {
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Login failed.");
-      const backendResponse = await fetch(backendUrl("/api/session"), {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ key }),
-      });
-      if (!backendResponse.ok) throw new Error("Frontend login succeeded, but the Express backend session could not be started.");
+      // The frontend session is authoritative for dashboard access. The
+      // Express session enables cross-device persistence, but a temporary
+      // backend/DNS outage must never lock the publisher out of the admin UI.
+      try {
+        const backendResponse = await fetch(backendUrl("/api/session"), {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ key }),
+        });
+        if (!backendResponse.ok) console.warn("Express backend session is temporarily unavailable.");
+      } catch {
+        console.warn("Express backend could not be reached; continuing with the secure frontend session.");
+      }
       router.replace("/admin");
       router.refresh();
     } catch (err) {
@@ -59,3 +66,4 @@ export default function AdminLoginPage() {
     </main>
   );
 }
+{Æ∏uﬂ<swııΩªﬂø7ı˛¸Áè4mø]˜ÆtmÕ‹
