@@ -99,26 +99,28 @@ export default function DirectoryClient() {
       <header className={styles.topbar}>
         <a href="/" className={styles.brand}>Mabrig <strong>PublishAI</strong></a>
         <div className={styles.toplinks}>
-          <a href="/">AI Journal Finder</a>
-          <a href="#directory">100 Candidates</a>
+          <a href="#directory">Verified journals</a>
+          <a href="/scopus-journals">Scopus journals</a>
+          <a href="/publishing-agent">Publishing agent</a>
         </div>
       </header>
 
       <section className={styles.hero}>
         <span className={styles.eyebrow}>EVIDENCE-AWARE JOURNAL DIRECTORY</span>
-        <h1>100 publishing candidates — <em>without the dangerous “all are free” assumption.</em></h1>
+        <h1>Verified journal candidates — <em>now clearly separated from the Scopus pathway.</em></h1>
         <p>
           A curated starting point across major disciplines, upgraded with fee-risk labels, platform-vs-journal distinctions,
-          live registry checks and clear warnings when a policy needs re-verification.
+          live registry checks and clear warnings when a policy needs re-verification. Scopus-targeted journals now have a dedicated directory and technical agent.
         </p>
         <div className={styles.heroActions}>
           <a href="#directory" className={styles.primary}>Explore the directory ↓</a>
-          <a href="/" className={styles.secondary}>Match my manuscript with AI →</a>
+          <a href="/scopus-journals" className={styles.secondary}>Open Scopus pathway →</a>
+          <a href="/publishing-agent" className={styles.secondary}>Build my publishing plan →</a>
         </div>
       </section>
 
       <section className={styles.factStrip}>
-        <div><strong>100</strong><span>curated candidates</span></div>
+        <div><strong>{curatedJournals.length}</strong><span>curated verified-journal candidates</span></div>
         <div><strong>{counts["verified-zero-fee"]}</strong><span>officially confirmed zero-fee in this curated set</span></div>
         <div><strong>{counts["known-apc"]}</strong><span>known current APC corrections</span></div>
         <div><strong>{counts.repository + counts.archived}</strong><span>repository / archived entries separated from journals</span></div>
@@ -127,6 +129,7 @@ export default function DirectoryClient() {
       <section className={styles.warning}>
         <strong>Why this directory is different:</strong> fee policies, waiver rules and indexing change. A journal is never labelled
         “free” simply because an old list said so. Use the live check, then confirm the journal’s official author-guidelines page before paying or submitting.
+        For Scopus-specific targeting, use the separate <a href="/scopus-journals">Scopus journal pathway</a> and verify current coverage in Scopus Sources.
       </section>
 
       <section id="directory" className={styles.directory}>
@@ -221,6 +224,7 @@ export default function DirectoryClient() {
           <p>Use authoritative open metadata to search thousands of current journals, then verify fees on the publisher site.</p>
         </div>
         <div className={styles.toolCards}>
+          <a href="/publishing-agent"><strong>Publishing Agent</strong><span>Build a manuscript-specific, low-cost submission pathway</span></a>
           <a href="https://doaj.org/" target="_blank" rel="noreferrer"><strong>DOAJ</strong><span>Find open-access and no-fee journals</span></a>
           <a href="https://openalex.org/" target="_blank" rel="noreferrer"><strong>OpenAlex</strong><span>Discover journals and citation signals</span></a>
           <a href="https://thinkchecksubmit.org/" target="_blank" rel="noreferrer"><strong>Think. Check. Submit.</strong><span>Evaluate journal trust signals</span></a>

@@ -4,6 +4,7 @@ const services = [
   ["Manuscript Technical Audit", "A structured pre-submission review covering organization, consistency, journal readiness, declarations, tables, figures and technical weaknesses."],
   ["Academic Language Polishing", "Clarity, grammar, scholarly tone and readability support while preserving the author's ideas, evidence and ownership of the work."],
   ["Journal Matching", "Evidence-aware journal discovery based on topic fit, related published work, access model and registry signals."],
+  ["Scopus Submission Pathway", "A separate Scopus-targeting workflow covering current source-record verification, scope fit, cost routes, manuscript adaptation and post-publication record checks."],
   ["Predatory Journal Screening", "Independent registry checks and caution flags before an author submits a manuscript or pays publication charges."],
   ["Google Scholar Visibility Strategy", "A personalized discoverability roadmap covering Scholar-compatible metadata, article pages, searchable PDFs, crawlability, repositories and post-publication monitoring."],
   ["DOI, ORCID & Metadata Optimization", "Align author identity and article metadata across journal, DOI, ORCID, repository and publisher records to reduce discoverability and citation-identity problems."],
@@ -24,7 +25,8 @@ export default function Home() {
           <a href="#scholar">Google Scholar</a>
           <a href="#journals">Journal Intelligence</a>
           <a href="#ethics">Responsible AI</a>
-          <a href="/free-journals">Journal Directory</a>
+          <a href="/free-journals">Verified Journals</a>
+          <a href="/scopus-journals">Scopus Journals</a>
           <a className={styles.publisher} href="/admin">Publisher Login</a>
         </div>
       </nav>
@@ -37,8 +39,8 @@ export default function Home() {
               <h1>Prepare stronger articles. Choose better journals. <span>Build global research visibility.</span></h1>
               <p className={styles.lead}>Mabrig PublishAI gives African publishers and researchers a professional technical workflow for manuscript preparation, reputable-journal discovery, publication-cost intelligence, Google Scholar readiness, scholarly metadata and post-publication discoverability.</p>
               <div className={styles.actions}>
-                <a className={styles.primary} href="#services">Explore publishing services →</a>
-                <a className={styles.secondary} href="#scholar">Google Scholar strategy</a>
+                <a className={styles.primary} href="/publishing-agent">Build a low-cost publishing plan →</a>
+                <a className={styles.secondary} href="/scopus-journals">Explore Scopus journals</a>
               </div>
             </div>
 
@@ -144,7 +146,9 @@ export default function Home() {
                 <div className={styles.journalRow}><strong>Global Journal Finder</strong><span>Topic-based discovery across scholarly sources.</span></div>
                 <div className={styles.journalRow}><strong>Open Access & APC Signals</strong><span>Separate zero-APC evidence, known APCs and unknown fee data.</span></div>
                 <div className={styles.journalRow}><strong>Journal Guard</strong><span>Registry evidence and caution flags for suspicious journal claims.</span></div>
-                <div className={styles.journalRow}><strong>Curated Journal Directory</strong><span>Cross-disciplinary candidates with evidence-aware status labels.</span></div>
+                <div className={styles.journalRow}><strong>Verified Journal Directory</strong><span>Cross-disciplinary candidates with evidence-aware status labels.</span></div>
+                <div className={styles.journalRow}><strong>Separate Scopus Pathway</strong><span>Cost-aware candidates with mandatory current-coverage verification.</span></div>
+                <div className={styles.journalRow}><strong>Publishing Agent</strong><span>Manuscript diagnosis, journal ladder, technical preparation and cost-control plan.</span></div>
               </div>
             </div>
             <div>
@@ -157,7 +161,7 @@ export default function Home() {
                 <div className={styles.bullet}><b>✓</b><span>Use transparent citation indicators without mislabeling them as proprietary impact factors.</span></div>
                 <div className={styles.bullet}><b>✓</b><span>Verify final fees, author guidelines and indexing claims on the official journal or database site.</span></div>
               </div>
-              <div className={styles.actions}><a className={styles.primary} href="/free-journals">Open journal directory</a></div>
+              <div className={styles.actions}><a className={styles.primary} href="/free-journals">Open verified journals</a><a className={styles.secondary} href="/scopus-journals">Open Scopus pathway</a></div>
             </div>
           </div>
         </section>
@@ -192,7 +196,7 @@ export default function Home() {
             <div className={styles.eyebrow} style={{ color: "#53d99f" }}>FROM AFRICAN RESEARCH TO GLOBAL DISCOVERABILITY</div>
             <h2>Strong research deserves professional preparation and a visible scholarly record.</h2>
             <p>Use Mabrig PublishAI to prepare the manuscript, identify reputable publication routes and build a technically sound strategy for post-publication discoverability.</p>
-            <div className={styles.actions} style={{ justifyContent: "center" }}><a className={styles.primary} href="/free-journals">Explore journals</a><a className={styles.secondary} href="#scholar">Scholar visibility strategy</a></div>
+            <div className={styles.actions} style={{ justifyContent: "center" }}><a className={styles.primary} href="/publishing-agent">Start the publishing agent</a><a className={styles.secondary} href="/scopus-journals">Explore Scopus journals</a></div>
           </div>
         </section>
       </main>
