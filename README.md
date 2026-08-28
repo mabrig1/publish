@@ -9,7 +9,11 @@ Mabrig PublishAI is an Africa-first AI-assisted academic publishing support plat
 
 The homepage is the complete client-facing information hub. It explains manuscript technical auditing, language polishing, journal matching and verification, predatory-journal risk screening, Google Scholar visibility strategy, DOI/ORCID metadata optimization, repository planning, citation/reference auditing, journal formatting, cover-letter support, reviewer-response support, post-publication monitoring and responsible AI.
 
-The `/free-journals` directory contains 100 cross-disciplinary candidates with evidence-aware labels rather than permanent claims that every title is always free to publish.
+The `/free-journals` directory contains 100 cross-disciplinary verified-journal candidates with evidence-aware labels rather than permanent claims that every title is always free to publish.
+
+The `/scopus-journals` route is deliberately separate. It provides a cost-aware Scopus pathway with diamond/open-access, no-mandatory-fee and waiver-route labels, plus official journal links and a Scopus Sources verification gate. No entry is treated as permanently indexed because coverage status and years can change.
+
+The `/publishing-agent` route is a public knowledge and technical agent. It evaluates title/abstract readiness, ranks field-fit Scopus-pathway candidates, builds a three-journal ladder, protects the author's budget, and produces a five-stage manuscript-to-publication workflow. It remains useful without an AI key through a deterministic fallback; configured AI providers add a manuscript-specific technical briefing.
 
 ## Private publisher operating system
 
@@ -25,6 +29,7 @@ The `/admin` area is the publisher's production workspace. Client jobs capture a
 - **Research Visibility Pack Generator** — produces a premium post-publication deliverable covering discoverability keywords, plain-language summary, repository metadata, ORCID update checklist, Scholar monitoring, ethical promotion copy and a 30-day dissemination plan.
 - **AI & Scholarly API Health Center** — tests OpenAI, OpenRouter, Groq, Gemini, OpenAlex and Crossref reachability/credentials without revealing secret keys.
 - **Journal Intelligence Directory** — live discovery and evidence-aware free/open-access journal research.
+- **Scopus & Minimal-Cost Publishing Agent** — a separate public pathway for current-coverage verification, journal-fit screening, cost control and complete submission planning.
 
 ## Google Scholar & research visibility engine
 

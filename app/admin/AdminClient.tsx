@@ -80,6 +80,7 @@ const serviceOptions = [
   "Academic language polishing",
   "Title and abstract optimization",
   "Journal matching and shortlist",
+  "Scopus verification & low-cost submission pathway",
   "Predatory-journal risk screening",
   "References and citation consistency audit",
   "Target-journal formatting checklist",
